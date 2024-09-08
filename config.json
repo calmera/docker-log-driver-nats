@@ -1,10 +1,10 @@
 {
-	"description": "jsonfilelog as plugin",
+	"description": "nats logging plugin",
 	"documentation": "-",
 	"entrypoint": ["/usr/bin/docker-log-driver"],
 	"interface": {
 		"types": ["docker.logdriver/1.0"],
-		"socket": "jsonfile.sock"
+		"socket": "nats-logger.sock"
 	},
 	"env": [
 		{

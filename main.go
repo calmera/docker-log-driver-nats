@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/nats-io/nats.go"
 	"os"
 
 	"github.com/docker/go-plugins-helpers/sdk"
@@ -15,6 +16,14 @@ var logLevels = map[string]logrus.Level{
 	"error": logrus.ErrorLevel,
 }
 
+const (
+	NatsClientIdVar  = "NATS_CLIENT_ID"
+	NatsUrlVar       = "NATS_URL"
+	UserJwtVar       = "NATS_USER_JWT"
+	UserSeedVar      = "NATS_USER_SEED"
+	SubjectPrefixVar = "NATS_SUBJECT_PREFIX"
+)
+
 func main() {
 	levelVal := os.Getenv("LOG_LEVEL")
 	if levelVal == "" {
@@ -26,10 +35,19 @@ func main() {
 		fmt.Fprintln(os.Stderr, "invalid log level: ", levelVal)
 		os.Exit(1)
 	}
+	cfg, err := ConfigFromEnv()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	nc, err := nats.Connect(cfg.Url, cfg.Options...)
+	if err != nil {
+		logrus.Fatal(err)
+	}
 
 	h := sdk.NewHandler(`{"Implements": ["LogDriver"]}`)
-	handlers(&h, newDriver())
-	if err := h.ServeUnix("jsonfile", 0); err != nil {
+	handlers(&h, newDriver(nc, cfg))
+	if err := h.ServeUnix("nats-logger", 0); err != nil {
 		panic(err)
 	}
 }
